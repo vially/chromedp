@@ -28,7 +28,7 @@ func main() {
 
 	// create edge instance
 	watch := client.New().WatchPageTargets(ctxt)
-	c, err := chromedp.New(ctxt, chromedp.WithTargets(watch))
+	c, err := cdp.New(ctxt, cdp.WithTargets(watch), cdp.UsingEdgeDiagnosticsAdapter)
 	if err != nil {
 		log.Fatal(err)
 	}

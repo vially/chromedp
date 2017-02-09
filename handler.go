@@ -58,6 +58,9 @@ type TargetHandler struct {
 	res   map[int64]chan interface{}
 	resrw sync.RWMutex
 
+	// edge toggles unique logic for the edge diagnostics adapter.
+	edge bool
+
 	sync.RWMutex
 }
 
@@ -424,6 +427,12 @@ loop:
 // SetActive sets the currently active frame after a successful navigation.
 func (h *TargetHandler) SetActive(ctxt context.Context, id cdp.FrameID) error {
 	var err error
+
+	// if edge, then use emptyFrameID to instead wait for the "next active
+	// frame"
+	if h.edge && id == cdp.FrameID("5000.1") {
+		id = emptyFrameID
+	}
 
 	// get frame
 	f, err := h.WaitFrame(ctxt, id)

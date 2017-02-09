@@ -48,6 +48,9 @@ type CDP struct {
 	// handlerMap is the map of target IDs to its active handler.
 	handlerMap map[string]int
 
+	// edge toggles unique logic for the edge diagnostics adapter.
+	edge bool
+
 	sync.RWMutex
 }
 
@@ -133,6 +136,9 @@ func (c *CDP) AddTarget(ctxt context.Context, t client.Target) {
 		log.Printf("error: could not create handler for %s, got: %v", t, err)
 		return
 	}
+
+	// copy edge setting
+	h.edge = c.edge
 
 	// run
 	err = h.Run(ctxt)
@@ -364,8 +370,8 @@ func (c *CDP) Run(ctxt context.Context, a Action) error {
 // Option is a Chrome Debugging Protocol option.
 type Option func(*CDP) error
 
-// WithRunner is a option to specify the underlying Chrome runner to monitor
-// for page handlers.
+// WithRunner is a CDP option to specify the underlying Chrome process runner
+// to monitor for page handlers.
 func WithRunner(r *runner.Runner) Option {
 	return func(c *CDP) error {
 		c.r = r
@@ -373,7 +379,16 @@ func WithRunner(r *runner.Runner) Option {
 	}
 }
 
-// WithTargets is an option to specify the incoming targets to monitor for page
+// WithRunnerOptions is a CDP option to specify the options to pass to a newly
+// created Chrome process runner.
+func WithRunnerOptions(opts ...runner.CommandLineOption) Option {
+	return func(c *CDP) error {
+		c.opts = opts
+		return nil
+	}
+}
+
+// WithTargets is a CDP option to specify the incoming targets to monitor for page
 // handlers.
 func WithTargets(watch <-chan client.Target) Option {
 	return func(c *CDP) error {
@@ -382,11 +397,9 @@ func WithTargets(watch <-chan client.Target) Option {
 	}
 }
 
-// WithRunnerOptions is a option to specify the options to pass to a newly
-// created Chrome process runner.
-func WithRunnerOptions(opts ...runner.CommandLineOption) Option {
-	return func(c *CDP) error {
-		c.opts = opts
-		return nil
-	}
+// UsingEdgeDiagnosticsAdapter is a CDP option to toggle unique logic for the
+// Microsoft Edge Diagnostics Adapter.
+func UsingEdgeDiagnosticsAdapter(c *CDP) error {
+	c.edge = true
+	return nil
 }

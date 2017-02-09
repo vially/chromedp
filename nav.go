@@ -11,6 +11,15 @@ import (
 // Navigate navigates the current frame.
 func Navigate(urlstr string) Action {
 	return ActionFunc(func(ctxt context.Context, h cdp.FrameHandler) error {
+		// if edge, then force clear the current active frame prior to calling
+		// navigate, as the frame ID returned by the edge diagnostics adapter
+		// is bad
+		if th, ok := h.(*TargetHandler); ok && th.edge {
+			th.Lock()
+			th.cur = nil
+			th.Unlock()
+		}
+
 		frameID, err := page.Navigate(urlstr).Do(ctxt, h)
 		if err != nil {
 			return err
@@ -126,3 +135,6 @@ func Location(urlstr *string) Action {
 
 	return EvaluateAsDevTools(`location.toString()`, urlstr)
 }
+
+// ScrollTo scrolls to the specified x, y location.
+//func ScrollTo(x, y int64)
